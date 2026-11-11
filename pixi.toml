@@ -9,7 +9,7 @@ version = "0.1.0"
 default = { features = ["dev"] }
 
 [tasks]
-prepare-rl = "python -m rl.prepare --config configs/data.yaml"
+prepare-rl = "python -m rl.prepare"
 train-rl = "python -m rl.train"
 typecheck = "pyright"
 

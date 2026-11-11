@@ -21,30 +21,21 @@ pixi lock --check
 
 ## 数据准备
 
-数据接口不依赖特定数据集。训练集和验证集分别使用一个 JSONL 文件，每行是一条 JSON 样本：
+数据准备由 `rl.data_prep.base.DataPrepProcessor` 的子类实现。子类接收完整 YAML 配置，在 `process()` 中读取原始数据、验证图片与标签、划分训练集与验证集并构造提示词，返回包含 `train` 和 `val` 两项的记录字典。子类负责避免训练集与验证集之间的对象泄漏；通用入口只调用一次 `process()`。
 
-```json
-{"object_id":"object-001","images":["view.png"],"instruction":"Reconstruct this object.","target":"target.npz"}
-```
-
-各字段的含义如下：
-
-| 字段 | 含义 |
-| --- | --- |
-| `object_id` | 对象标识，用于检查同一对象是否同时出现在训练集和验证集中。 |
-| `images` | 输入图片的路径列表，至少包含一张图片。 |
-| `instruction` | 输入给模型的任务描述。 |
-| `target` | 目标几何文件的路径，仅用于计算奖励，不作为模型输入。 |
-
-图片和目标几何的路径均相对于 JSONL 文件所在目录解析。目标几何使用 NumPy 的 NPZ 文件格式，包含两个数组：`vertices` 保存形状为 N×3 的顶点世界坐标，`faces` 保存形状为 M×3 的三角面顶点索引。数据提供者需要保证图片与目标几何对应，并统一几何的坐标系和单位。
-
-在 `configs/data.yaml` 的 `sources.train` 和 `sources.val` 中分别填写训练集和验证集的 JSONL 路径，并填写输出路径和指导模型回答的系统提示词。数据路径目前为 `null`，需要填写后才能执行转换：
+在 `rl/prepare.py` 中直接导入处理器类，并在 `PROCESSORS` 字典中填写名称到类的映射。配置中的 `data_preparation` 填写字典中的名称，`outputs.train` 和 `outputs.val` 填写训练集与验证集的输出路径，`system_prompt` 和 `user_prompt` 必须显式提供。原始数据路径等专属配置由具体子类定义。所有配置路径均相对于运行命令时的工作目录。命令行入口先通过 `parse_data_config` 读取 YAML 并使用 Pydantic 模型校验，再将 `DataConfig` 传给 `prepare` 和处理器。
 
 ```bash
-pixi run prepare-rl
+pixi run prepare-rl --config configs/data-3d_code_data_factory.yaml
 ```
 
-转换程序检查图片和目标几何，并拒绝空数据集，以及训练集与验证集包含相同对象的情况。程序将样本保存为 verl 使用的 Parquet 表格文件，其中包含对话消息、图片和奖励所需的目标路径。
+通用入口将处理器返回的 `train` 和 `val` 记录分别写入配置指定的 Parquet 文件，并拒绝未知处理器、空数据集和重复的输出路径。每条记录应包含 `data_source`、`prompt`、`images`、`reward_model` 和 `extra_info` 等 verl 所需字段，具体内容由处理器构造。写出按 split 进行；后续 split 失败时，之前已写出的文件会保留。
+
+`3DCodeDataFactoryPreprocessor` 读取 `source_root` 下每个对象目录中的同名 GLB，并按 `image_paths` 的顺序加载参考图。当前配置使用四张彩色图组成一条记录。处理器先对对象目录排序，再使用 `seed` 打乱，以 `ceil(对象数 × val_fraction)` 个对象作为验证集，其余作为训练集；同一对象的所有视图始终属于同一个集合。当前 205 个对象在 `val_fraction: 0.1` 时划分为 184 个训练对象和 21 个验证对象。
+
+数据集专属参数由 `ThreeDCodeDataFactoryConfig` 校验，全部必须在 YAML 中显式填写。入口通过处理器的 `config_model` 选择配置模型，不提供参数默认值。Blender 使用 `blender` 和 `timeout` 配置，将 GLB 导入空场景，再通过 `rl/export_mesh.py` 导出包含世界坐标顶点和三角面的 NPZ。目标文件保存到 `target_dir`，绝对路径写入 `reward_model.ground_truth`；每次准备都会重新转换。程序检查输入图片和目标网格，不执行数据集中的 Python 脚本。
+
+准备过程只转换训练数据，不启动模型训练。临时 Blender 日志放在 `temp/` 下；导入失败时会报告对象路径和日志，超时则报错停止。
 
 ## 训练
 
@@ -76,10 +67,12 @@ Hydra 负责加载和组合 YAML 配置。项目入口检查数据路径、调�
 pixi run typecheck
 ```
 
-以下命令分别运行几何评分测试，以及数据转换与 Blender 执行测试：
+以下命令分别运行几何评分、数据准备调度、数据集转换与 Blender 执行测试：
 
 ```bash
 pixi run python -m unittest discover -s tests -p test_rl_geometry.py
+pixi run python -m unittest discover -s tests -p test_data_prep.py
+pixi run python -m unittest discover -s tests -p test_data_factory.py
 pixi run python -m unittest discover -s tests -p test_rl_pipeline.py
 ```
 
