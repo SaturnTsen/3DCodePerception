@@ -1,0 +1,29 @@
+# pixi environments
+.pixi
+!.pixi/config.toml
+
+/temp
+/AGENTS.md
+
+# Data
+/data
+/3dcodeverse
+
+# Model
+/models
+
+# pixi environments
+/.pixi
+.pixi/*
+!.pixi/config.toml
+
+# IDE
+/.vscode
+
+# post-training outputs and Python build artifacts
+/outputs/
+/*.egg-info/
+__pycache__/
+.pytest_cache/
+
+

@@ -1,0 +1,10 @@
+manifests:
+  train: null
+  val: null
+outputs:
+  train: data/train.parquet
+  val: data/val.parquet
+system_prompt: >-
+  Reconstruct the object shown in the images. Return exactly one fenced python
+  code block containing a complete standalone Blender Python script.
+  Create the final geometry in the scene. Do not render or save files.

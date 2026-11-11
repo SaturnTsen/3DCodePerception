@@ -1,0 +1,39 @@
+[workspace]
+authors = ["ll <lingada60@gmail.com>"]
+channels = ["conda-forge"]
+name = "3DCodePerception"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.12.*"
+numpy = ">=2.5.4,<3"
+pandas = ">=3.1.1,<4"
+scipy = ">=1.18.1,<2"
+pyyaml = ">=6.0.3,<7"
+pyarrow = ">=26.0.1,<27"
+pillow = ">=13.0.0,<14"
+
+[tasks.prepare-rl]
+cmd = "python -m rl.prepare --config configs/data.yaml"
+
+[tasks.train-rl]
+cmd = "python -m rl.train configs/grpo.yaml"
+
+# Preserve the locked NumPy, as in the existing project's accepted numba exception.
+[pypi-options.dependency-overrides]
+numpy = "==2.5.4"
+# Numba 0.68 supports NumPy 2.5; vLLM still pins 0.65.
+numba = "==0.68.1"
+
+[pypi-dependencies]
+verl = { git = "https://github.com/verl-project/verl.git", rev = "63913d1d5fef4d028658c330f397c0bd2a909213" }
+vllm = "==0.32.0"
+3dcodeperception = { path = ".", editable = true }
+numba = "==0.68.1"
+qwen-vl-utils = ">=0.0.14, <0.0.15"
+
+[activation.env]
+PYTHONNOUSERSITE = "1"
