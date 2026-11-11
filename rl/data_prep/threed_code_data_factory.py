@@ -6,7 +6,7 @@ from pathlib import Path
 import random
 import subprocess
 import tempfile
-from typing import Any, cast
+from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -36,7 +36,7 @@ class ThreeDCodeDataFactoryProcessor(DataPrepProcessor):
     config_model = ThreeDCodeDataFactoryConfig
 
     def process(self) -> PreparedSplits:
-        config = cast(ThreeDCodeDataFactoryConfig, self.config)
+        config = ThreeDCodeDataFactoryConfig.model_validate(self.config.model_dump())
         objects = sorted(path for path in config.source_root.iterdir() if path.is_dir())
         if len(objects) < 2:
             raise ValueError('3DCodeDataFactory requires at least two objects for train and val')

@@ -12,7 +12,7 @@ from PIL import Image
 from pydantic import ValidationError
 import yaml
 
-from rl.data_prep.base import OutputsConfig
+from rl.data_prep.base import DataConfig, OutputsConfig
 from rl.data_prep.threed_code_data_factory import (
     ThreeDCodeDataFactoryConfig, ThreeDCodeDataFactoryProcessor,
 )
@@ -30,6 +30,22 @@ class FactoryTest(unittest.TestCase):
             val_fraction=0.5, seed=42, target_dir=root / 'targets',
             blender=Path('/home/ubuntu/.local/bin/blender'), timeout=60,
         )
+
+    def test_process_validates_base_config_before_reading_data(self):
+        with tempfile.TemporaryDirectory(dir='temp') as directory:
+            raw = self.config(Path(directory)).model_dump()
+            base = DataConfig.model_validate(raw)
+            splits = ThreeDCodeDataFactoryProcessor(base)
+            for field, value in (('seed', 'invalid'), ('val_fraction', 0), ('image_paths', [])):
+                with self.subTest(field=field):
+                    invalid = base.model_copy(update={field: value})
+                    with self.assertRaises(ValidationError):
+                        ThreeDCodeDataFactoryProcessor(invalid).process()
+            del raw['source_root']
+            with self.assertRaises(ValidationError):
+                ThreeDCodeDataFactoryProcessor(DataConfig.model_validate(raw)).process()
+            with self.assertRaises(FileNotFoundError):
+                splits.process()
 
     def test_dataset_fields_are_required_in_yaml(self):
         path = Path('configs/data-3d_code_data_factory.yaml')

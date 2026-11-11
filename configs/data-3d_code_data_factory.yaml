@@ -1,5 +1,4 @@
-data_preparation:
-  "3DCodeDataFactoryPreprocessor"
+data_preparation: 3DCodeDataFactoryPreprocessor
 source_root: data/raw/3DCodeDataFactory-Cleaned
 image_paths:
   - color_renders/Image_005.png

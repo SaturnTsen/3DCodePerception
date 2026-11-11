@@ -17,7 +17,7 @@ class OutputsConfig(BaseModel):
 
 
 class DataConfig(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="allow", strict=True)
     data_preparation: str
     outputs: OutputsConfig
     system_prompt: str

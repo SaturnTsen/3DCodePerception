@@ -145,11 +145,11 @@ class DataPrepTest(unittest.TestCase):
                 with self.assertRaises(ValidationError):
                     self.parse(raw)
 
-    def test_schema_rejects_invalid_types_and_unknown_fields(self):
+    def test_schema_rejects_invalid_types_and_unknown_output_fields(self):
         for field, value in (
             ('system_prompt', None), ('user_prompt', ['prompt']),
             ('outputs', ['train.parquet']), ('data_preparation', {'class': 'processor'}),
-            ('system_prompt', 123), ('unknown_field', 'unexpected'),
+            ('system_prompt', 123),
             ('outputs', {'train': 'train.parquet', 'val': 'val.parquet', 'test': 'test.parquet'}),
         ):
             with self.subTest(field=field, value=value):
@@ -160,6 +160,12 @@ class DataPrepTest(unittest.TestCase):
         for raw in (None, [], 'not a mapping'):
             with self.subTest(raw=raw), self.assertRaises(ValidationError):
                 self.parse(raw)
+
+    def test_outer_config_preserves_dataset_fields(self):
+        raw = self.config(Path('temp/unused'))
+        raw['dataset_option'] = {'value': 42}
+        config = self.parse(raw)
+        self.assertEqual(config.model_extra, {'dataset_option': {'value': 42}})
 
     def test_unknown_processor_is_rejected(self):
         with tempfile.TemporaryDirectory(dir='temp') as directory:

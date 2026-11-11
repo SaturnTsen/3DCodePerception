@@ -11,7 +11,7 @@ from rl.data_prep import PROCESSORS, DataConfig
 def parse_data_config(path: Path) -> DataConfig:
     """Read YAML and validate it against the Pydantic configuration model."""
     raw = yaml.safe_load(path.read_text(encoding='utf-8'))
-    common = DataConfig.model_validate(raw, extra='ignore')
+    common = DataConfig.model_validate(raw)
     if common.data_preparation not in PROCESSORS:
         raise ValueError(f'Unknown data preparation processor {common.data_preparation!r}')
     return PROCESSORS[common.data_preparation].config_model.model_validate(raw)
