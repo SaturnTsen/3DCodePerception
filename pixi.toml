@@ -5,7 +5,13 @@ name = "3DCodePerception"
 platforms = ["linux-64"]
 version = "0.1.0"
 
+[environments]
+default = { features = ["dev"] }
+
 [tasks]
+prepare-rl = "python -m rl.prepare --config configs/data.yaml"
+train-rl = "python -m rl.train"
+typecheck = "pyright"
 
 [dependencies]
 python = "3.12.*"
@@ -15,12 +21,6 @@ scipy = ">=1.18.1,<2"
 pyyaml = ">=6.0.3,<7"
 pyarrow = ">=26.0.1,<27"
 pillow = ">=13.0.0,<14"
-
-[tasks.prepare-rl]
-cmd = "python -m rl.prepare --config configs/data.yaml"
-
-[tasks.train-rl]
-cmd = "python -m rl.train configs/grpo.yaml"
 
 # Preserve the locked NumPy, as in the existing project's accepted numba exception.
 [pypi-options.dependency-overrides]
@@ -37,3 +37,8 @@ qwen-vl-utils = ">=0.0.14, <0.0.15"
 
 [activation.env]
 PYTHONNOUSERSITE = "1"
+
+[feature.dev.pypi-dependencies]
+fake-bpy-module-5-1 = "*"
+pyright = { version = ">=1.1.414, <2", extras = ["nodejs"] }
+scipy-stubs = ">=1.18.1.1, <2"

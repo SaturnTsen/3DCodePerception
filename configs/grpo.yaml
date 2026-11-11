@@ -74,6 +74,7 @@ reward:
       seed: 42
       work_dir: temp/reward
 trainer:
+  use_v1: true
   project_name: 3DCodePerception
   experiment_name: single_response_grpo
   logger: [console]

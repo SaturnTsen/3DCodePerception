@@ -1,9 +1,20 @@
 """Surface sampling and target-scale Chamfer reward."""
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
 from scipy.spatial import cKDTree
 
 
-def sample_surface(vertices, faces, count, seed):
+def sample_surface(
+    vertices: ArrayLike,
+    faces: ArrayLike,
+    count: int,
+    seed: int,
+) -> NDArray[np.float64]:
+    """Sample count points from triangles, weighted by surface area.
+
+    Example: points = sample_surface(vertices, faces, count=4096, seed=42)
+    Input shapes: vertices (Nx3), faces (Mx3). Output shape: (count, 3).
+    """
     vertices = np.asarray(vertices, dtype=np.float64)
     faces = np.asarray(faces, dtype=np.int64)
     if vertices.ndim != 2 or vertices.shape[1] != 3 or not np.isfinite(vertices).all():
@@ -23,6 +34,14 @@ def sample_surface(vertices, faces, count, seed):
     return (1-u)*selected[:, 0] + u*(1-v)*selected[:, 1] + u*v*selected[:, 2]
 
 
-def compare(prediction, target, scale):
-    distance = (cKDTree(target).query(prediction)[0].mean() + cKDTree(prediction).query(target)[0].mean()) / (2*scale)
+def compare(
+    prediction: NDArray[np.float64],
+    target: NDArray[np.float64],
+    scale: float,
+) -> dict[str, float]:
+    """Score two point clouds using Chamfer distance / target bounding-box diagonal.
+
+    Returns: {"score": exp(-distance), "chamfer": distance, "execution_success": 1.0}
+    """
+    distance = (np.mean(cKDTree(target).query(prediction)[0]) + np.mean(cKDTree(prediction).query(target)[0])) / (2*scale)
     return {"score": float(np.exp(-distance)), "chamfer": float(distance), "execution_success": 1.0}
