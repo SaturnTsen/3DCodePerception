@@ -1,5 +1,6 @@
 # pixi environments
 .pixi
+.local-bin
 !.pixi/config.toml
 
 /temp
