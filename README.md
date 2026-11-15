@@ -39,7 +39,7 @@ pixi run prepare-rl --config configs/data-3d_code_data_factory.yaml
 
 ## 训练
 
-在 `configs/grpo.yaml` 中填写 `data.train_files` 和 `data.val_files`，使其指向转换后的文件，并确认模型路径、Blender 可执行文件路径和训练参数适合当前机器。目标几何文件必须能被计算奖励的进程访问；当前配置面向单机运行。
+`configs/train-3d_code_data_factory-grpo.yaml` 中的 `data.train_files` 和 `data.val_files` 指向数据准备配置 `outputs` 写出的 Parquet 文件；修改输出路径时两处需要同步。训练前请确认模型路径、Blender 可执行文件路径和训练参数适合当前机器。目标几何文件必须能被计算奖励的进程访问；当前配置面向单机运行。
 
 ```bash
 pixi run train-rl

@@ -10,9 +10,9 @@ from verl.utils.config import validate_config
 from verl.utils.device import auto_set_device
 
 
-@hydra.main(config_path='../configs', config_name='grpo', version_base=None)
+@hydra.main(config_path='../configs', config_name='train-3d_code_data_factory-grpo', version_base=None)
 def main(config: DictConfig) -> None:
-    """Train with verl using configs/grpo.yaml.
+    """Train with verl using configs/train-3d_code_data_factory-grpo.yaml.
 
     Run: pixi run train-rl
     Override YAML values: pixi run train-rl trainer.total_epochs=2

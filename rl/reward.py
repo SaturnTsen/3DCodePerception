@@ -27,7 +27,7 @@ def compute_score(
 
     solution_str: Python code, optionally inside one ```python code block.
     ground_truth: NPZ path with vertices (Nx3) and faces (Mx3).
-    Execution settings come from configs/grpo.yaml: reward.custom_reward_function.
+    Execution settings come from configs/train-3d_code_data_factory-grpo.yaml: reward.custom_reward_function.
 
     Example result: 
     {

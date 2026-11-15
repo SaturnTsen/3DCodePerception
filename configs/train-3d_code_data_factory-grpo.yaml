@@ -9,8 +9,8 @@ algorithm:
   use_kl_in_reward: false
   norm_adv_by_std_in_grpo: true
 data:
-  train_files: null
-  val_files: null
+  train_files: data/3DCodeDataFactory_train.parquet
+  val_files: data/3DCodeDataFactory_val.parquet
   train_batch_size: 4
   max_prompt_length: 4096
   max_response_length: 4096
