@@ -37,6 +37,7 @@ bpy.context.view_layer.update()
 depsgraph = bpy.context.evaluated_depsgraph_get()
 for obj in (a, b):
     mesh = obj.data
+    assert mesh is not None
     print(f'\n=== 对象 {obj.name} ===')
     print('A 和 B 共用同一份网格数据:', a.data == b.data)
     print('原始网格顶点数:', len(mesh.vertices))  # pyright: ignore[reportAttributeAccessIssue]

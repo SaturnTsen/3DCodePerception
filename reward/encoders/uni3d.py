@@ -6,7 +6,7 @@ unit sphere, and colored uniform grey 0.4. The benchmark feeds glTF coordinates
 (+Y up), so Blender coordinates (+Z up) are converted before encoding.
 """
 import threading
-from typing import Any, cast
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -14,9 +14,8 @@ import timm
 from timm.models.eva import Eva
 import torch
 
-from services.reward.chamfer import sample_surface
-from services.reward.config import Uni3DConfig
-from services.reward.encoders.point_encoder import PointcloudEncoder, Uni3D
+from reward.config import Uni3DConfig
+from reward.encoders.point_encoder import PointcloudEncoder, Uni3D
 
 GREY = 0.4
 CLASSIFIER_HEAD = ('point_encoder.visual.head.weight', 'point_encoder.visual.head.bias')
@@ -48,13 +47,6 @@ class Uni3DEncoder:
             del state[name]
         model.load_state_dict(state)
         self.point_encoder = model.point_encoder.to(device).eval()
-
-    def encode_mesh(self, vertices: NDArray[Any], faces: NDArray[Any]) -> NDArray[np.float32]:
-        """Sample config.points surface points with config.seed and embed them.
-
-        Raises ValueError when the mesh has no finite surface to sample.
-        """
-        return self.encode_points(sample_surface(vertices, faces, self.config.points, self.config.seed))
 
     @torch.no_grad()
     def encode_points(self, points: NDArray[np.float64]) -> NDArray[np.float32]:

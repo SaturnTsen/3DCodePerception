@@ -8,10 +8,10 @@ version = "0.1.0"
 requires-python = ">=3.12"
 
 [tool.setuptools.packages.find]
-include = ["rl*"]
+include = ["rl*", "reward*"]
 
 [tool.pyright]
-include = ["rl", "tests"]
+include = ["rl", "reward", "tests"]
 typeCheckingMode = "standard"
 pythonVersion = "3.12"
 venvPath = ".pixi/envs"

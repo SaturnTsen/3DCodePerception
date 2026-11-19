@@ -11,8 +11,7 @@ import open_clip
 from PIL import Image
 import torch
 
-from services.reward.config import Uni3DConfig
-from services.reward.encoders.uni3d import unit
+from reward.config import Uni3DConfig
 
 
 class ClipImageEncoder:
@@ -27,4 +26,5 @@ class ClipImageEncoder:
     @torch.no_grad()
     def encode_image(self, image: Image.Image) -> NDArray[np.float32]:
         pixels = self.preprocess(image.convert('RGB')).unsqueeze(0)
-        return unit(self.model.encode_image(pixels.to(self.device, torch.float16)))
+        embedding = self.model.encode_image(pixels.to(self.device, torch.float16)).float()
+        return (embedding / embedding.norm(dim=-1, keepdim=True)).squeeze(0).cpu().numpy()

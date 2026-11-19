@@ -2,7 +2,7 @@
 import math
 import unittest
 
-from rl.reward import COMPONENTS, combine, extract_code
+from rl.reward import COMPONENTS, combine_scores, extract_code
 
 METRICS = {
     'chamfer': {'rms_radius': 0.2, 'max_radius': 0.1},
@@ -27,14 +27,14 @@ class ExtractCodeTest(unittest.TestCase):
 
 class CombineTest(unittest.TestCase):
     def test_weighted_sum(self):
-        result = combine('ok', METRICS, **SETTINGS)
+        result = combine_scores('ok', METRICS, **SETTINGS)
         self.assertAlmostEqual(result['chamfer'], math.exp(-0.2 / 0.5))
         expected = 0.4 * math.exp(-0.4) + 0.3 * 0.8 + 0.2 * 0.9 + 0.1 * 0.3
         self.assertAlmostEqual(result['score'], expected)
         self.assertEqual((result['success'], result['chamfer_distance']), (1.0, 0.2))
 
     def test_failure_scores_zero_with_the_same_keys(self):
-        success, failure = combine('ok', METRICS, **SETTINGS), combine('timeout', None, **SETTINGS)
+        success, failure = combine_scores('ok', METRICS, **SETTINGS), combine_scores('timeout', None, **SETTINGS)
         self.assertEqual(set(success), set(failure))
         self.assertEqual(failure['score'], 0.0)
         self.assertEqual(failure['chamfer_distance'], -1.0)

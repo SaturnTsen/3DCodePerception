@@ -1,11 +1,12 @@
-"""Render the current scene from the four reference camera angles.
+"""Render the current scene from the reference camera azimuths.
 
 Run after the generated script and export_mesh.py in the same Blender process:
     blender --background --python response.py --python export_mesh.py --python render.py \
-        -- mesh.npz --render-dir DIR --engine CYCLES --device GPU --samples 16 --resolution 512
+        -- mesh.npz --render-dir DIR --engine CYCLES --device GPU --samples 16 --resolution 512 \
+        --azimuths 45 135 225 315
 
-Writes DIR/view_0.png ... view_3.png (RGBA, transparent background) at azimuths
-45, 135, 225, and 315 degrees, matching reference views Image_005/015/025/035.
+Writes DIR/view_0.png, view_1.png, ... (RGBA, transparent background), one per azimuth
+in degrees. The reward service config pairs each azimuth with a reference image.
 
 The camera, lights, world, and default material follow 3DHarnessBench
 core/blender_scene_setup.py (rig version benchmark_extent_squared_v1). The scene
@@ -21,7 +22,6 @@ import bpy  # pyright: ignore[reportMissingModuleSource]
 from mathutils import Vector  # pyright: ignore[reportMissingModuleSource]
 
 GEOMETRY_TYPES = ('MESH', 'CURVE', 'SURFACE', 'FONT', 'META')
-AZIMUTHS = (45, 135, 225, 315)
 LIGHT_REFERENCE_EXTENT = 2.5
 # name: (position in units of camera radius/height, energy, size relative to extent)
 LIGHTS = {
@@ -74,6 +74,7 @@ def main() -> None:
     parser.add_argument('--device', choices=('GPU', 'CPU'), required=True)
     parser.add_argument('--samples', type=int, required=True)
     parser.add_argument('--resolution', type=int, required=True)
+    parser.add_argument('--azimuths', type=float, nargs='+', required=True)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
 
     scene = bpy.context.scene
@@ -152,7 +153,7 @@ def main() -> None:
         scene.eevee.taa_render_samples = args.samples  # pyright: ignore[reportAttributeAccessIssue]
 
     args.render_dir.mkdir(parents=True, exist_ok=True)
-    for index, azimuth in enumerate(AZIMUTHS):
+    for index, azimuth in enumerate(args.azimuths):
         angle = math.radians(azimuth)
         camera.location = (radius * math.cos(angle), radius * math.sin(angle), height)
         look_at(camera, origin)

@@ -68,11 +68,17 @@ reward:
     path: rl/reward.py
     name: compute_score
     reward_kwargs:
-      blender: /home/ubuntu/.local/bin/blender
-      timeout: 60
-      samples: 4096
-      seed: 42
-      work_dir: temp/reward
+      # Reward service on gbc1 (reward), reached through TCP port forwarding.
+      service_url: http://127.0.0.1:8720
+      request_timeout: 3600
+      chamfer_normalization: rms_radius
+      # Placeholders until the component distributions of the initial model are measured
+      # (docs/TODOs.md). Replace before real training.
+      chamfer_temperature: 1.0
+      weight_chamfer: 0.25
+      weight_dinov3: 0.25
+      weight_uni3d: 0.25
+      weight_uni3d_image: 0.25
 trainer:
   use_v1: true
   project_name: 3DCodePerception

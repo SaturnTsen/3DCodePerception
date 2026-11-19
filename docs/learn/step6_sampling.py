@@ -10,9 +10,10 @@ from pathlib import Path
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.spatial import cKDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from rl.geometry import compare, sample_surface  # noqa: E402
+from rl.geometry import sample_surface  # noqa: E402
 
 NAMES = ('SimpleDeskFactory', 'CupFactory', 'LiteDoorFactory', 'SpiralStaircaseFactory',
          'MushroomFactory')
@@ -42,11 +43,13 @@ def subdivide(vertices: NDArray[np.float64], faces: NDArray[np.int64]):
 
 
 def chamfer(vertices_a, faces_a, vertices_b, faces_b, count: int, seed_a: int, seed_b: int) -> float:
-    """和 rl/reward.py 相同：按目标包围盒对角线归一化的双向平均最近距离。"""
+    """加入对齐之前的奖励距离：双向平均最近距离，除以目标包围盒对角线。"""
     target = sample_surface(vertices_a, faces_a, count, seed_a)
     prediction = sample_surface(vertices_b, faces_b, count, seed_b)
     scale = float(np.linalg.norm(np.ptp(vertices_a, axis=0)))
-    return compare(prediction, target, scale)['chamfer']
+    forward = np.asarray(cKDTree(prediction).query(target)[0]).mean()
+    backward = np.asarray(cKDTree(target).query(prediction)[0]).mean()
+    return float(forward + backward) / (2 * scale)
 
 
 def main() -> None:

@@ -1,4 +1,4 @@
-"""Import a GLB before running rl/export_mesh.py in the same Blender process.
+"""Import a GLB into an empty scene before export_mesh.py runs in the same Blender process.
 
 Usage: blender ... --python import_glb.py --python export_mesh.py -- OUTPUT_NPZ INPUT_GLB
 """

@@ -1,9 +1,10 @@
-"""Chamfer distance of services/score."""
+"""Chamfer distance of reward."""
 import unittest
 
 import numpy as np
 
-from services.score.chamfer import NORMALIZATIONS, chamfer_distance, sample_surface
+from reward.metrics.chamfer import NORMALIZATIONS, chamfer_distance
+from reward.utils import sample_surface
 
 # An irregular tetrahedron: no rotational symmetry, so orientation errors are visible.
 VERTICES = np.array([[0, 0, 0], [2, 0, 0], [0, 1, 0], [0.3, 0.2, 3]], dtype=np.float64)

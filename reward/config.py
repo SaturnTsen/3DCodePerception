@@ -31,6 +31,13 @@ class AlertConfig(StrictModel):
     ttl: int = Field(gt=0)
 
 
+class ViewConfig(StrictModel):
+    """One view: the render camera azimuth and the matching reference image of each object."""
+    azimuth: float
+    # Relative to the object's directory under source_root.
+    reference: str
+
+
 class ChamferConfig(StrictModel):
     samples: int = Field(gt=0)
     seed: int
@@ -57,9 +64,12 @@ class Uni3DConfig(StrictModel):
 class RewardServiceConfig(StrictModel):
     host: str
     port: int = Field(gt=0, lt=65536)
-    # Data preparation config: its Parquet outputs and target_dir define the targets.
-    data_config: Path = Field(strict=False)
+    # Raw dataset: one directory per object, named by object_id, holding <object_id>.glb.
+    source_root: Path = Field(strict=False)
+    views: list[ViewConfig] = Field(min_length=1)
     features_dir: Path = Field(strict=False)
+    # Time limit of converting one target GLB to a mesh at start.
+    glb_timeout: float = Field(gt=0)
     work_dir: Path = Field(strict=False)
     blender: Path = Field(strict=False)
     blender_threads: int = Field(gt=0)

@@ -1,5 +1,17 @@
 host: 127.0.0.1
 port: 8720
+# Raw dataset shared with data preparation: one directory per object_id with <object_id>.glb.
+source_root: data/raw/3DCodeDataFactory-Cleaned
+# Renders of a response and the reference images they are compared with.
+views:
+  - {azimuth: 45, reference: color_renders/Image_005.png}
+  - {azimuth: 135, reference: color_renders/Image_015.png}
+  - {azimuth: 225, reference: color_renders/Image_025.png}
+  - {azimuth: 315, reference: color_renders/Image_035.png}
+# Target features; missing files are computed at service start.
+features_dir: data/3DCodeDataFactory_features
+glb_timeout: 60
+work_dir: temp/reward
 blender: /home/ubuntu/.local/bin/blender
 blender_threads: 4
 max_parallel: 6
@@ -10,12 +22,8 @@ render:
   device: GPU
   samples: 64
   resolution: 512
-  # The scoring service uses cuda:0 (configs/service-score.yaml).
+  # The encoders use cuda:0 (device below).
   gpus: "1"
-# Written by services/score/targets.py (pixi run build-target-features).
-features_dir: data/3DCodeDataFactory_features
-work_dir: temp/execute
-score_url: http://127.0.0.1:8710
 # Rendering failures of a non-empty mesh stop training; this push is sent once per process.
 alert:
   url: https://api.day.app/K7n2JgowGatoYGYgtosBHW
@@ -24,3 +32,21 @@ alert:
   sound: fanfare
   group: example
   ttl: 600
+device: cuda:0
+chamfer:
+  samples: 4096
+  seed: 42
+dinov3:
+  model: facebook/dinov3-vitl16-pretrain-lvd1689m
+uni3d:
+  checkpoint: /home/ubuntu/.cache/huggingface/hub/models--BAAI--Uni3D/snapshots/3d8233b76aa350d72f6213ecd2123c2026b42355/modelzoo/uni3d-g/model.pt
+  backbone: eva_giant_patch14_560
+  backbone_dim: 1408
+  embed_dim: 1024
+  group_size: 64
+  num_group: 512
+  encoder_dim: 512
+  points: 8192
+  seed: 0
+  clip_model: EVA02-E-14-plus
+  clip_pretrained: laion2b_s9b_b144k

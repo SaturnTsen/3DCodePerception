@@ -11,14 +11,13 @@ from typing import Literal
 
 import numpy as np
 
-import services.reward.blender
-from services.reward.config import RewardServiceConfig
+import reward.blender
+from reward.config import RewardServiceConfig
 
 Status = Literal['ok', 'execution_error', 'timeout', 'invalid_geometry']
 
-BLENDER_SCRIPTS = Path(services.reward.blender.__file__).parent
+BLENDER_SCRIPTS = Path(reward.blender.__file__).parent
 CLEAR_SCENE = 'import bpy; bpy.ops.object.select_all(action="SELECT"); bpy.ops.object.delete(use_global=False)'
-VIEW_COUNT = 4
 LOG_TAIL_CHARACTERS = 4000
 
 
@@ -26,8 +25,8 @@ def mesh_path(directory: Path) -> Path:
     return directory / 'mesh.npz'
 
 
-def render_paths(directory: Path) -> list[Path]:
-    return [directory / 'renders' / f'view_{index}.png' for index in range(VIEW_COUNT)]
+def render_paths(directory: Path, count: int) -> list[Path]:
+    return [directory / 'renders' / f'view_{index}.png' for index in range(count)]
 
 
 def log_tail(directory: Path) -> str:
@@ -73,6 +72,7 @@ async def run_script(code: str, directory: Path, config: RewardServiceConfig) ->
         '--', str(mesh_path(directory)), '--render-dir', str(directory / 'renders'),
         '--engine', render.engine, '--device', render.device,
         '--samples', str(render.samples), '--resolution', str(render.resolution),
+        '--azimuths', *(str(view.azimuth) for view in config.views),
     ]
     with (directory / 'blender.log').open('w') as log:
         process = await asyncio.create_subprocess_exec(
@@ -93,6 +93,7 @@ async def run_script(code: str, directory: Path, config: RewardServiceConfig) ->
         return 'execution_error'
     if not has_faces(directory):
         return 'invalid_geometry'
-    if process.returncode != 0 or not all(path.exists() for path in render_paths(directory)):
+    rendered = all(path.exists() for path in render_paths(directory, len(config.views)))
+    if process.returncode != 0 or not rendered:
         raise RenderError(log_tail(directory))
     return 'ok'

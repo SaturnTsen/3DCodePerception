@@ -11,6 +11,7 @@ default = { features = ["dev"] }
 [tasks]
 prepare-rl = "python -m rl.prepare"
 train-rl = "python -m rl.train"
+reward-service = "python -m reward.app"
 typecheck = "pyright"
 
 [dependencies]
@@ -34,6 +35,11 @@ vllm = "==0.32.0"
 3dcodeperception = { path = ".", editable = true }
 numba = "==0.68.1"
 qwen-vl-utils = ">=0.0.14, <0.0.15"
+timm = ">=1.0.31, <2"
+open-clip-torch = ">=4.2.2, <5"
+fastapi = ">=0.136.3, <0.137"
+uvicorn = ">=0.54.0, <0.55"
+httpx = ">=0.28.1, <0.29"
 
 [activation.env]
 PYTHONNOUSERSITE = "1"

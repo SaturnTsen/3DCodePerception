@@ -3,7 +3,7 @@
 Run: pixi run reward-service --config configs/service-reward.yaml
 
 At start, the DINOv3 and Uni3D encoders are loaded, and target feats missing from
-features_dir are computed with them (services/reward/target_feats.py).
+features_dir are computed with them (reward/target_feats.py).
 
 POST /run    JSON {"object_id": "...", "code": "..."}
              -> {"status": "ok" | "execution_error" | "timeout" | "invalid_geometry",
@@ -12,8 +12,8 @@ POST /run    JSON {"object_id": "...", "code": "..."}
                  "log": tail of the Blender log, empty when status is ok}
 GET /health  {"status": "ok"}
 
-One request runs one Blender process (services/reward/runner.py) that executes the code,
-exports the mesh, and renders four views; services/reward/measure.py then compares them
+One request runs one Blender process (reward/script_runner.py) that executes the code,
+exports the mesh, and renders four views; reward/measure.py then compares them
 with the target feats in this process.
 An unknown object_id is answered with HTTP 404. Failures of the generated code are
 reported in status; failures of this service are HTTP errors, so the caller can stop.
@@ -35,22 +35,18 @@ import httpx
 from pydantic import BaseModel
 import uvicorn
 
-from services.reward.config import AlertConfig, RewardServiceConfig, load_config
-from services.reward.encoders.dinov3 import Dinov3Encoder
-from services.reward.encoders.uni3d import Uni3DEncoder
-from services.reward.measure import measure
-from services.reward.runner import RenderError, Status, log_tail, run_script
-from services.reward.target_feats import prepare_target_feats
+from reward.config import AlertConfig, RewardServiceConfig, load_config
+from reward.encoders.dinov3 import Dinov3Encoder
+from reward.encoders.uni3d import Uni3DEncoder
+from reward.measure import measure
+from reward.script_runner import RenderError, Status, log_tail, mesh_path, render_paths, run_script
+from reward.target_feats import prepare_target_feats
 
 logger = logging.getLogger(__name__)
-
-ALERT_BODY = '奖励服务渲染失败，训练已停止，请查看服务日志'
-
 
 class RunRequest(BaseModel):
     object_id: str
     code: str
-
 
 class RunResponse(BaseModel):
     status: Status
@@ -60,9 +56,10 @@ class RunResponse(BaseModel):
 
 
 async def send_alert(alert: AlertConfig) -> None:
+    """Send a Bark push to the configured URL with the configured level and sound."""
     async with httpx.AsyncClient(timeout=20) as client:
         response = await client.get(
-            f'{alert.url}/{alert.title}/{ALERT_BODY}',
+            f'{alert.url}/{alert.title}/奖励服务渲染失败，训练已停止，请查看服务日志',
             params={'level': alert.level, 'sound': alert.sound, 'group': alert.group, 'ttl': alert.ttl})
         response.raise_for_status()
 
@@ -95,12 +92,17 @@ def create_app(config: RewardServiceConfig, dinov3: Dinov3Encoder, uni3d: Uni3DE
             started = time.monotonic()
             with tempfile.TemporaryDirectory(dir=config.work_dir) as name:
                 directory = Path(name)
+                # Step 1: run the code in Blender, export the mesh, and render the views.
                 status = await run_script(request.code, directory, config)
                 executed = time.monotonic()
                 metrics = None
                 if status == 'ok':
+                    # Step 2: measure the rendered views against the target feats.
                     try:
-                        metrics = await run_in_threadpool(measure, dinov3, uni3d, config.chamfer, directory, features)
+                        # Step 2: measure the rendered views against the target feats.
+                        metrics = await run_in_threadpool(
+                            measure, dinov3, uni3d, config, mesh_path(directory),
+                            render_paths(directory, len(config.views)), features)
                     except ValueError:
                         # The mesh has faces but no finite surface area to sample.
                         status = 'invalid_geometry'
