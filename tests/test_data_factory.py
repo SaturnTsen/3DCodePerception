@@ -116,7 +116,8 @@ for name, x in [('AFactory', 0), ('BFactory', 3)]:
                     for image in row['images']:
                         with Image.open(BytesIO(image['bytes'])) as opened:
                             self.assertEqual(opened.getpixel((0, 0)), colors[name])
-                    with np.load(row['reward_model']['ground_truth'], allow_pickle=False) as mesh:
+                    self.assertEqual(row['reward_model']['ground_truth'], name)
+                    with np.load(config.target_dir / f'{name}.npz', allow_pickle=False) as mesh:
                         expected_x = 0 if name == 'AFactory' else 3
                         np.testing.assert_allclose(mesh['vertices'].mean(axis=0), [expected_x, 0, 0], atol=1e-6)
                         np.testing.assert_allclose(np.ptp(mesh['vertices'], axis=0), [2, 2, 2], atol=1e-6)

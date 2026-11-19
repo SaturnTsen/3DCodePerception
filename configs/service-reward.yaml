@@ -1,0 +1,26 @@
+host: 127.0.0.1
+port: 8720
+blender: /home/ubuntu/.local/bin/blender
+blender_threads: 4
+max_parallel: 6
+script_timeout: 60
+render_timeout: 120
+render:
+  engine: CYCLES
+  device: GPU
+  samples: 64
+  resolution: 512
+  # The scoring service uses cuda:0 (configs/service-score.yaml).
+  gpus: "1"
+# Written by services/score/targets.py (pixi run build-target-features).
+features_dir: data/3DCodeDataFactory_features
+work_dir: temp/execute
+score_url: http://127.0.0.1:8710
+# Rendering failures of a non-empty mesh stop training; this push is sent once per process.
+alert:
+  url: https://api.day.app/K7n2JgowGatoYGYgtosBHW
+  title: 3DCodePerception
+  level: critical
+  sound: fanfare
+  group: example
+  ttl: 600
