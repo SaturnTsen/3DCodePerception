@@ -22,9 +22,12 @@ data:
     enable_thinking: false
 actor_rollout_ref:
   model:
-    path: /home/ubuntu/models/Qwen3.5-9B
+    path: /home/ubuntu/models/Qwen3.5-0.8B
     use_remove_padding: false
     enable_gradient_checkpointing: true
+    # flash-attn has no prebuilt wheel for torch 2.13 + CUDA 13; use PyTorch SDPA.
+    override_config:
+      attn_implementation: sdpa
   actor:
     strategy: fsdp2
     ppo_mini_batch_size: 4

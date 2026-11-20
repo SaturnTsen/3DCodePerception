@@ -30,7 +30,7 @@ numpy = "==2.5.4"
 numba = "==0.68.1"
 
 [pypi-dependencies]
-verl = { git = "https://github.com/verl-project/verl.git", rev = "63913d1d5fef4d028658c330f397c0bd2a909213" }
+verl = { git = "https://github.com/verl-project/verl.git", rev = "63913d1d5fef4d028658c330f397c0bd2a909213", extras = ["verl-core"] }
 vllm = "==0.32.0"
 3dcodeperception = { path = ".", editable = true }
 numba = "==0.68.1"
