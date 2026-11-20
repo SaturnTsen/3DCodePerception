@@ -4,6 +4,10 @@ defaults:
 hydra:
   searchpath:
     - pkg://verl.trainer.config
+  # rl/train.py tees the whole stdout/stderr into train.log; drop Hydra's file handler to avoid duplicates.
+  job_logging:
+    root:
+      handlers: [console]
 algorithm:
   adv_estimator: grpo
   use_kl_in_reward: false
@@ -84,9 +88,9 @@ reward:
       weight_uni3d_image: 0.25
 trainer:
   use_v1: true
-  project_name: 3DCodePerception
+  project_name: rl
   experiment_name: single_response_grpo
-  logger: [console]
+  logger: [console, wandb]
   nnodes: 1
   n_gpus_per_node: 2
   total_epochs: 1
@@ -98,3 +102,6 @@ ray_kwargs:
   ray_init:
     runtime_env:
       py_executable: null
+      env_vars:
+        # verl reads the wandb entity only from this variable inside the Ray TaskRunner.
+        WANDB_ENTITY: lingada60-institut-polytechnique-de-paris
