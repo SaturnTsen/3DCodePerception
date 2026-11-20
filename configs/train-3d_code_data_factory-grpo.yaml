@@ -26,7 +26,7 @@ data:
     enable_thinking: false
 actor_rollout_ref:
   model:
-    path: /home/ubuntu/models/Qwen3.5-0.8B
+    path: /home/ubuntu/models/Qwen3.8-27B
     use_remove_padding: false
     enable_gradient_checkpointing: true
     # flash-attn has no prebuilt wheel for torch 2.13 + CUDA 13; use PyTorch SDPA.
@@ -60,8 +60,8 @@ actor_rollout_ref:
     temperature: 1.0
     top_p: 1.0
     top_k: -1
-    tensor_model_parallel_size: 1
-    gpu_memory_utilization: 0.35
+    tensor_model_parallel_size: 4
+    gpu_memory_utilization: 0.6
     log_prob_micro_batch_size_per_gpu: 1
     max_model_len: 8192
     max_num_batched_tokens: 8192
@@ -92,11 +92,12 @@ trainer:
   experiment_name: single_response_grpo
   logger: [console, wandb]
   nnodes: 1
-  n_gpus_per_node: 2
+  n_gpus_per_node: 4
   total_epochs: 1
   save_freq: 10
   test_freq: 10
-  val_before_train: true
+  val_before_train: false
+  resume_mode: auto
   default_local_dir: outputs/single_response_grpo
 ray_kwargs:
   ray_init:
