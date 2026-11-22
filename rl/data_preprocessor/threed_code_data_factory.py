@@ -4,12 +4,11 @@ from collections.abc import Iterable
 import math
 from pathlib import Path
 import random
-from typing import Any
 
 from PIL import Image
 from pydantic import Field
 
-from rl.data_prep.base import DataConfig, DataPrepProcessor, PreparedSplits
+from rl.data_preprocessor.base import DataConfig, DataPrepProcessor, ImageData, PreparedSplits, VerlRecord
 
 
 class ThreeDCodeDataFactoryConfig(DataConfig):
@@ -48,9 +47,9 @@ class ThreeDCodeDataFactoryProcessor(DataPrepProcessor):
 
     def _records(
         self, objects: list[Path], split: str, config: ThreeDCodeDataFactoryConfig,
-    ) -> Iterable[dict[str, Any]]:
+    ) -> Iterable[VerlRecord]:
         for index, directory in enumerate(objects):
-            images = []
+            images: list[ImageData] = []
             for path in (directory / relative_path for relative_path in config.image_paths):
                 with Image.open(path) as opened:
                     opened.verify()

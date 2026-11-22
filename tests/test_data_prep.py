@@ -11,10 +11,10 @@ import pandas as pd
 from pydantic import ValidationError
 import yaml
 
-from rl.data_prep import (
+from rl.data_preprocessor import (
     DataConfig, DataPrepProcessor, OutputsConfig,
 )
-from rl.data_prep.base import PreparedSplits
+from rl.data_preprocessor.base import PreparedSplits, VerlRecord
 from rl.prepare import PROCESSORS, parse_data_config, prepare
 
 
@@ -28,7 +28,7 @@ class FixtureProcessor(DataPrepProcessor):
         ]
         result: PreparedSplits = {'train': [], 'val': []}
         for split in ('train', 'val'):
-            records = []
+            records: list[VerlRecord] = []
             for item in source:
                 if item['split'] != split:
                     continue
@@ -80,7 +80,7 @@ class DataPrepTest(unittest.TestCase):
             'user_prompt': 'Reconstruct.',
         }
 
-    def parse(self, config: Any) -> DataConfig:
+    def parse(self, config: object) -> DataConfig:
         with tempfile.TemporaryDirectory(dir='temp') as directory:
             path = Path(directory) / 'config.yaml'
             path.write_text(yaml.safe_dump(config), encoding='utf-8')

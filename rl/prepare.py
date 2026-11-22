@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from rl.data_prep import PROCESSORS, DataConfig
+from rl.data_preprocessor import PROCESSORS, DataConfig
 
 def parse_data_config(path: Path) -> DataConfig:
     """Read YAML and validate it against the Pydantic configuration model."""

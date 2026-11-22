@@ -41,6 +41,8 @@ actor_rollout_ref:
     kl_loss_coef: 0.01
     kl_loss_type: low_var_kl
     entropy_coeff: 0
+    # Compute entropy over the 248k-vocab logits in chunks instead of one full fp32 copy per micro-batch.
+    entropy_from_logits_with_chunking: true
     optim:
       lr: 1.0e-6
     fsdp_config:
@@ -61,7 +63,9 @@ actor_rollout_ref:
     top_p: 1.0
     top_k: -1
     tensor_model_parallel_size: 4
-    gpu_memory_utilization: 0.6
+    # Weights take ~13.5 GiB per GPU at TP=4; only 16 of 64 layers keep a KV cache, so 16 x 8192 tokens
+    # need only a few GiB. 0.4 leaves ample KV space while returning ~19 GiB per GPU.
+    gpu_memory_utilization: 0.4
     log_prob_micro_batch_size_per_gpu: 1
     max_model_len: 8192
     max_num_batched_tokens: 8192
@@ -88,6 +92,8 @@ reward:
       weight_uni3d_image: 0.25
 trainer:
   use_v1: true
+  v1:
+    trainer_mode: sync  # 可选：sync / colocate_async / separate_async
   project_name: rl
   experiment_name: single_response_grpo
   logger: [console, wandb]

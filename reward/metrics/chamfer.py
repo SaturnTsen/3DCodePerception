@@ -2,11 +2,15 @@
 
 All coordinates are Blender world coordinates with +Z up.
 """
+from typing import get_args
+
 import numpy as np
 from numpy.typing import NDArray
 from scipy.spatial import cKDTree
 
-NORMALIZATIONS = ('rms_radius', 'max_radius')
+from reward.types import ChamferNormalization
+
+NORMALIZATIONS: tuple[ChamferNormalization, ...] = get_args(ChamferNormalization)
 # Rotations about the Blender up axis (+Z) by 0, 90, 180, and 270 degrees.
 YAW_ROTATIONS = tuple(
     np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])

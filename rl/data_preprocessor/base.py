@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import Any, ClassVar, TypedDict
+from typing import ClassVar, TypedDict
 
 from pydantic import BaseModel, Field, ConfigDict
 from pathlib import Path
@@ -24,12 +24,38 @@ class DataConfig(BaseModel):
     user_prompt: str
 
 
+# One verl Parquet record
+class Message(TypedDict):
+    role: str
+    content: str
+
+
+class ImageData(TypedDict):
+    bytes: bytes
+    path: str | None
+
+
+class RewardSpec(TypedDict):
+    style: str
+    ground_truth: str
+
+
+class VerlRecord(TypedDict):
+    """Fields verl reads from one row; extra_info is passed to the reward function as is."""
+
+    data_source: str
+    prompt: list[Message]
+    images: list[ImageData]
+    reward_model: RewardSpec
+    extra_info: dict[str, object]
+
+
 # Data preparation processor interface and record partitioning
 class PreparedSplits(TypedDict):
     """Training and validation records partitioned by the dataset processor."""
 
-    train: Iterable[dict[str, Any]]
-    val: Iterable[dict[str, Any]]
+    train: Iterable[VerlRecord]
+    val: Iterable[VerlRecord]
 
 
 class DataPrepProcessor(ABC):

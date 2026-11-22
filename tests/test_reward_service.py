@@ -98,14 +98,14 @@ class RewardServiceTest(unittest.TestCase):
         response = self.run_code(client, CUBE)
         self.assertEqual(response.status_code, 200)
         result = response.json()
-        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['run_status'], 'ok')
         metrics = result['metrics']
         self.assertLess(metrics['chamfer']['rms_radius'], 0.05)
         self.assertGreater(metrics['uni3d']['cos_3d_3d'], 0.95)
         self.assertTrue(-1 <= metrics['uni3d']['cos_image_3d'] <= 1)
         self.assertTrue(-1 <= metrics['dinov3']['best_assignment'] <= 1)
-        self.assertEqual(self.run_code(client, 'pass\n').json()['status'], 'invalid_geometry')
-        self.assertEqual(self.run_code(client, 'raise RuntimeError\n').json()['status'], 'execution_error')
+        self.assertEqual(self.run_code(client, 'pass\n').json()['run_status'], 'invalid_geometry')
+        self.assertEqual(self.run_code(client, 'raise RuntimeError\n').json()['run_status'], 'execution_error')
         self.assertEqual(self.run_code(client, CUBE, 'Missing').status_code, 404)
         self.assertEqual(self.run_code(client, CUBE, '../Cube').status_code, 404)
 

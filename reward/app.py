@@ -6,17 +6,17 @@ At start, the DINOv3 and Uni3D encoders are loaded, and target feats missing fro
 features_dir are computed with them (reward/target_feats.py).
 
 POST /run    JSON {"object_id": "...", "code": "..."}
-             -> {"status": "ok" | "execution_error" | "timeout" | "invalid_geometry",
+             -> {"run_status": "ok" | "execution_error" | "timeout" | "invalid_geometry",
                  "metrics": raw metric values, or null,
                  "seconds": {"queue": ..., "blender": ..., "score": ...},
-                 "log": tail of the Blender log, empty when status is ok}
+                 "log": tail of the Blender log, empty when run_status is ok}
 GET /health  {"status": "ok"}
 
 One request runs one Blender process (reward/script_runner.py) that executes the code,
 exports the mesh, and renders four views; reward/measure.py then compares them
 with the target feats in this process.
 An unknown object_id is answered with HTTP 404. Failures of the generated code are
-reported in status; failures of this service are HTTP errors, so the caller can stop.
+reported in run_status; failures of this service are HTTP errors, so the caller can stop.
 A rendering failure of a non-empty mesh is answered with HTTP 500 and, the first time
 in this process, a Bark push at the configured level (critical).
 """
@@ -26,33 +26,22 @@ import logging
 from pathlib import Path
 import tempfile
 import time
-from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 import httpx
-from pydantic import BaseModel
 import uvicorn
 
 from reward.config import AlertConfig, RewardServiceConfig, load_config
 from reward.encoders.dinov3 import Dinov3Encoder
 from reward.encoders.uni3d import Uni3DEncoder
 from reward.measure import measure
-from reward.script_runner import RenderError, Status, log_tail, mesh_path, render_paths, run_script
+from reward.script_runner import RenderError, log_tail, mesh_path, render_paths, run_script
 from reward.target_feats import prepare_target_feats
+from reward.types import RunRequest, RunResponse
 
 logger = logging.getLogger(__name__)
-
-class RunRequest(BaseModel):
-    object_id: str
-    code: str
-
-class RunResponse(BaseModel):
-    status: Status
-    metrics: dict[str, Any] | None
-    seconds: dict[str, float]
-    log: str
 
 
 async def send_alert(alert: AlertConfig) -> None:
@@ -93,22 +82,21 @@ def create_app(config: RewardServiceConfig, dinov3: Dinov3Encoder, uni3d: Uni3DE
             with tempfile.TemporaryDirectory(dir=config.work_dir) as name:
                 directory = Path(name)
                 # Step 1: run the code in Blender, export the mesh, and render the views.
-                status = await run_script(request.code, directory, config)
+                run_status = await run_script(request.code, directory, config)
                 executed = time.monotonic()
                 metrics = None
-                if status == 'ok':
+                if run_status == 'ok':
                     # Step 2: measure the rendered views against the target feats.
                     try:
-                        # Step 2: measure the rendered views against the target feats.
                         metrics = await run_in_threadpool(
                             measure, dinov3, uni3d, config, mesh_path(directory),
                             render_paths(directory, len(config.views)), features)
                     except ValueError:
                         # The mesh has faces but no finite surface area to sample.
-                        status = 'invalid_geometry'
-                log = '' if status == 'ok' else log_tail(directory)
+                        run_status = 'invalid_geometry'
+                log = '' if run_status == 'ok' else log_tail(directory)
         return RunResponse(
-            status=status, metrics=metrics, log=log,
+            run_status=run_status, metrics=metrics, log=log,
             seconds={
                 'queue': started - arrived, 'blender': executed - started,
                 'score': time.monotonic() - executed,

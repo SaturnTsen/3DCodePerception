@@ -10,8 +10,8 @@ from PIL import Image
 from pydantic import ValidationError
 import yaml
 
-from rl.data_prep.base import DataConfig, OutputsConfig
-from rl.data_prep.threed_code_data_factory import (
+from rl.data_preprocessor.base import DataConfig, OutputsConfig
+from rl.data_preprocessor.threed_code_data_factory import (
     ThreeDCodeDataFactoryConfig, ThreeDCodeDataFactoryProcessor,
 )
 from rl.prepare import parse_data_config, prepare

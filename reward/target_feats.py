@@ -17,7 +17,6 @@ import logging
 from pathlib import Path
 import subprocess
 import tempfile
-from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -72,7 +71,7 @@ def prepare_target_feats(dinov3: Dinov3Encoder, uni3d: Uni3DEncoder, config: Rew
             export_target(directory.resolve() / f'{object_id}.glb', mesh_file, config)
             with np.load(mesh_file, allow_pickle=False) as mesh:
                 vertices, faces = mesh['vertices'], mesh['faces']
-                feats: dict[str, NDArray[Any]] = {
+                feats: dict[str, NDArray[np.float32] | NDArray[np.float64]] = {
                     'chamfer_points': sample_surface(vertices, faces, config.chamfer.samples, config.chamfer.seed),
                     'dinov3': dinov3.encode(images),
                     'uni3d': uni3d.encode_points(

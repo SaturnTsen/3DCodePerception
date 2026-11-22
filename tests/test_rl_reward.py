@@ -2,13 +2,14 @@
 import math
 import unittest
 
+from reward.types import MeasureResult
 from rl.reward import COMPONENTS, combine_scores, extract_code
 
-METRICS = {
+METRICS = MeasureResult.model_validate({
     'chamfer': {'rms_radius': 0.2, 'max_radius': 0.1},
     'dinov3': {'view_paired': 0.5, 'best_assignment': 0.8},
     'uni3d': {'cos_3d_3d': 0.9, 'cos_image_3d': 0.3},
-}
+})
 SETTINGS = {
     'chamfer_normalization': 'rms_radius', 'chamfer_temperature': 0.5,
     'weights': {'chamfer': 0.4, 'dinov3': 0.3, 'uni3d': 0.2, 'uni3d_image': 0.1},

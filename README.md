@@ -68,7 +68,7 @@ Chamfer 距离的定义：在生成几何和目标几何的表面按面积撒点
 
 ## 奖励服务
 
-`reward/` 是运行在 gbc1 上的 HTTP 服务，负责运行模型生成的代码并测量结果。训练集群通过 TCP 端口转发访问它，这是训练端和 gbc1 之间唯一的接口：`rl/` 和 `reward/` 之间没有代码引用，也不读取对方的配置或输出，两边只共享同一个原始数据集目录。配置写在 `configs/service-reward.yaml` 中，所有字段都必须显式填写。启动命令：
+`reward/` 是运行在 gbc1 上的 HTTP 服务，负责运行模型生成的代码并测量结果。训练集群通过 TCP 端口转发访问它，这是训练端和 gbc1 之间唯一的接口：请求和返回的数据结构定义在 `reward/types.py` 中，`rl/` 只引用这一个文件，不引用 `reward/` 的其他代码，也不读取对方的配置或输出，两边只共享同一个原始数据集目录。配置写在 `configs/service-reward.yaml` 中，所有字段都必须显式填写。启动命令：
 
 ```bash
 pixi run reward-service --config configs/service-reward.yaml
@@ -77,6 +77,7 @@ pixi run reward-service --config configs/service-reward.yaml
 | 文件 | 作用 |
 |---|---|
 | `reward/app.py` | 服务入口：启动时加载编码器、准备目标特征，然后处理 `POST /run` |
+| `reward/types.py` | 服务和 `rl/reward.py` 共用的数据结构，例如测量结果 `MeasureResult`；只依赖 Pydantic |
 | `reward/script_runner.py` | 启动 Blender 子进程运行生成的代码，并对结果分类 |
 | `reward/measure.py` | 撒点、编码，并把一次运行的网格和渲染图与目标特征比较，返回各指标的原始数值 |
 | `reward/target_feats.py` | 启动时为缺少目标特征的对象撒点、编码，写出目标特征 |
@@ -116,7 +117,7 @@ Uni3D 的点云网络改编自 Uni3D 官方仓库，见 `reward/encoders/point_e
 
 ### 返回结果
 
-`script_timeout` 只限制生成脚本本身的运行时间，从 Blender 启动时开始计算，不包括排队时间。网格导出之后，渲染另有 `render_timeout` 的时间限制。返回的 `status` 有四种取值：
+`script_timeout` 只限制生成脚本本身的运行时间，从 Blender 启动时开始计算，不包括排队时间。网格导出之后，渲染另有 `render_timeout` 的时间限制。返回的 `run_status` 表示生成代码的运行结果（不是 HTTP 状态码），有四种取值：
 
 | 取值 | 含义 |
 |---|---|

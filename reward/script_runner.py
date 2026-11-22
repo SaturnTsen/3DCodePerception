@@ -7,14 +7,11 @@ import asyncio
 import os
 from pathlib import Path
 import signal
-from typing import Literal
-
 import numpy as np
 
 import reward.blender
 from reward.config import RewardServiceConfig
-
-Status = Literal['ok', 'execution_error', 'timeout', 'invalid_geometry']
+from reward.types import RunStatus
 
 BLENDER_SCRIPTS = Path(reward.blender.__file__).parent
 CLEAR_SCENE = 'import bpy; bpy.ops.object.select_all(action="SELECT"); bpy.ops.object.delete(use_global=False)'
@@ -52,7 +49,7 @@ async def _kill(process: asyncio.subprocess.Process) -> None:
     await process.wait()
 
 
-async def run_script(code: str, directory: Path, config: RewardServiceConfig) -> Status:
+async def run_script(code: str, directory: Path, config: RewardServiceConfig) -> RunStatus:
     """Run code in a fresh Blender process inside directory and classify the outcome.
 
     execution_error: the script raised or exited before the mesh was exported.
