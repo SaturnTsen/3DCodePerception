@@ -10,7 +10,8 @@
 /data
 /raw
 /3dcodeverse
-
+/wandb
+    
 # Model
 /models
 
