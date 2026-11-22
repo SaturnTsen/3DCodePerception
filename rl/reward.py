@@ -74,7 +74,8 @@ async def compute_score(
     HTTP errors are raised so that training stops instead of learning from false zeros.
     """
     async with httpx.AsyncClient(timeout=request_timeout) as client:
-        request = RunRequest(run_id=run_id, object_id=ground_truth, code=extract_code(solution_str))
+        request = RunRequest(
+            run_id=run_id, object_id=ground_truth, response=solution_str, code=extract_code(solution_str))
         response = await client.post(f'{service_url}/run', json=request.model_dump())
     response.raise_for_status()
     result = RunResponse.model_validate(response.json())

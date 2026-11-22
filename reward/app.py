@@ -5,13 +5,14 @@ Run: pixi run reward-service --config configs/service-reward.yaml
 At start, the DINOv3 and Uni3D encoders are loaded, and target feats missing from
 features_dir are computed with them (reward/target_feats.py).
 
-POST /run    JSON {"object_id": "...", "code": "..."}
+POST /run    JSON {"run_id": "...", "object_id": "...", "response": "...", "code": "..."}
              -> {"run_status": "ok" | "execution_error" | "timeout" | "invalid_geometry",
                  "metrics": raw metric values, or null,
                  "seconds": {"queue": ..., "blender": ..., "score": ...},
                  "log": tail of the Blender log, empty when run_status is ok}
              The files of the request stay in runs_dir/<run_id>/<time>_<object_id>_<random>/:
-             response.py, mesh.npz, renders/, blender.log, and result.json (the response).
+             response.txt (raw model output), response.py (the executed code), mesh.npz,
+             renders/, blender.log, and result.json (the response).
 GET /health  {"status": "ok"}
 
 One request runs one Blender process (reward/script_runner.py) that executes the code,
@@ -78,8 +79,11 @@ def create_app(config: RewardServiceConfig, dinov3: Dinov3Encoder, uni3d: Uni3DE
         if Path(request.object_id).name != request.object_id or not features.is_file():
             raise HTTPException(404, f'unknown object_id {request.object_id!r}')
         instance = f'{datetime.now():%Y%m%d-%H%M%S-%f}_{request.object_id}_{uuid4().hex[:8]}'
-        directory = config.runs_dir / request.run_id / instance
+        # Absolute, because Blender runs with this directory as its working directory.
+        directory = config.runs_dir.resolve() / request.run_id / instance
         directory.mkdir(parents=True)
+        (directory / 'response.txt').write_text(request.response)
+        logger.info('run start %s', directory)
         arrived = time.monotonic()
         async with slots:
             started = time.monotonic()
@@ -105,6 +109,7 @@ def create_app(config: RewardServiceConfig, dinov3: Dinov3Encoder, uni3d: Uni3DE
             },
         )
         (directory / 'result.json').write_text(response.model_dump_json(indent=2))
+        logger.info('run done %s %s blender %.1fs', run_status, directory, executed - started)
         return response
 
     return app

@@ -51,7 +51,7 @@ Hydra 负责加载和组合 YAML 配置。项目入口检查数据路径、调�
 
 ## 奖励
 
-`rl/reward.py` 是 verl 的自定义奖励函数，以异步方式运行，verl 会同时为一批回答发出请求。模型应输出一个标记为 `python` 的 Markdown 代码块；回答中恰好有一个这样的代码块时取其内容，否则把整个回答当作脚本。奖励函数把脚本、对象编号和本次训练的 `run_id` 发给奖励服务，再把返回的原始数值合成为四个分量，每个分量都由 `reward_kwargs` 中的必填参数控制。`run_id` 在 YAML 中写作 `???`，由 `rl/train.py` 在启动时填为 `<trainer.experiment_name>-<启动时间>`，例如 `single_response_grpo-20261122-065834`，用来区分不同的训练：
+`rl/reward.py` 是 verl 的自定义奖励函数，以异步方式运行，verl 会同时为一批回答发出请求。模型应输出一个标记为 `python` 的 Markdown 代码块；回答中恰好有一个这样的代码块时取其内容，否则把整个回答当作脚本。奖励函数把原始回答、提取出的脚本、对象编号和本次训练的 `run_id` 发给奖励服务，再把返回的原始数值合成为四个分量，每个分量都由 `reward_kwargs` 中的必填参数控制。`run_id` 在 YAML 中写作 `???`，由 `rl/train.py` 在启动时填为 `<trainer.experiment_name>-<启动时间>`，例如 `single_response_grpo-20261122-065834`，用来区分不同的训练：
 
 | 分量 | 计算方式 |
 |---|---|
@@ -102,7 +102,7 @@ CLIP 图像编码器约 9.4 GB，只在有特征缺失时加载，算完立即�
 
 ### 处理一个请求
 
-`POST /run` 接收 JSON `{"run_id": ..., "object_id": ..., "code": ...}`。`run_id` 只能包含字母、数字、`.`、`_` 和 `-`，且不能以 `.` 开头，否则返回 422。每个请求的文件保存在 `runs_dir/<run_id>/<时间>_<对象编号>_<8 位随机串>/` 中，处理完不删除：生成的代码 `response.py`、导出的网格 `mesh.npz`、渲染图 `renders/`、Blender 日志 `blender.log`，以及与返回内容相同的 `result.json`。渲染失败返回 500 时目录同样保留，但没有 `result.json`；`object_id` 未知时在创建目录之前返回 404。`work_dir` 只在启动时计算目标特征时存放临时文件。请求依次完成两件事：
+`POST /run` 接收 JSON `{"run_id": ..., "object_id": ..., "response": ..., "code": ...}`，`response` 是模型的原始回答，`code` 是从中提取、实际执行的脚本。`run_id` 只能包含字母、数字、`.`、`_` 和 `-`，且不能以 `.` 开头，否则返回 422。每个请求的文件保存在 `runs_dir/<run_id>/<时间>_<对象编号>_<8 位随机串>/` 中，处理完不删除：原始回答 `response.txt`、执行的代码 `response.py`、导出的网格 `mesh.npz`、渲染图 `renders/`、Blender 日志 `blender.log`，以及与返回内容相同的 `result.json`。渲染失败返回 500 时目录同样保留，但没有 `result.json`；`object_id` 未知时在创建目录之前返回 404。`runs_dir` 在使用前转成绝对路径，因为 Blender 以请求目录为工作目录运行。服务日志在每个请求开始和结束时各打印一行，带上请求目录，结束时还带上 `run_status`。`work_dir` 只在启动时计算目标特征时存放临时文件。请求依次完成两件事：
 
 1. **运行**：启动一个 Blender 子进程（`reward/script_runner.py`），依次执行代码、用 `export_mesh.py` 导出网格、用 `reward/blender/render.py` 按 `views` 的方位角渲染。相机和灯光设置与 3DHarnessBench 相同。Blender 只使用 `render.gpus` 指定的 GPU（通过 `CUDA_VISIBLE_DEVICES`），应与编码器使用的 `device` 错开。同时运行的 Blender 进程数由 `max_parallel` 限制，超出的请求排队等待。
 2. **测量**：在服务进程内调用 `reward/measure.py`，把网格和渲染图与 `features_dir/<object_id>.npz` 中的目标特征比较。每个编码器自带一把锁，并发请求依次使用 GPU。

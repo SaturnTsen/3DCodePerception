@@ -17,13 +17,17 @@ data:
   val_files: data/3DCodeDataFactory_val.parquet
   train_batch_size: 4
   max_prompt_length: 4096
-  max_response_length: 4096
+  # Also written into the prompts by rl/dataset.py.
+  max_response_length: 16384
   truncation: error
   filter_overlong_prompts: false
   image_key: images
   return_raw_chat: true
   apply_chat_template_kwargs:
     enable_thinking: false
+  custom_cls:
+    path: pkg://rl.dataset
+    name: ResponseLimitDataset
 actor_rollout_ref:
   model:
     path: /home/ubuntu/models/Qwen3.8-27B
@@ -63,12 +67,13 @@ actor_rollout_ref:
     top_p: 1.0
     top_k: -1
     tensor_model_parallel_size: 4
-    # Weights take ~13.5 GiB per GPU at TP=4; only 16 of 64 layers keep a KV cache, so 16 x 8192 tokens
-    # need only a few GiB. 0.4 leaves ample KV space while returning ~19 GiB per GPU.
+    # Weights take ~13.5 GiB per GPU at TP=4; only 16 of 64 layers keep a KV cache (16 KiB per token per GPU),
+    # so 16 x 20480 tokens need ~5 GiB. 0.4 leaves ample KV space.
     gpu_memory_utilization: 0.4
     log_prob_micro_batch_size_per_gpu: 1
-    max_model_len: 8192
-    max_num_batched_tokens: 8192
+    # max_prompt_length + max_response_length.
+    max_model_len: 20480
+    max_num_batched_tokens: 20480
     multi_turn:
       enable: false
     agent:

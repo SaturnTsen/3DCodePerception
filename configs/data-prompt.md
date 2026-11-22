@@ -19,18 +19,13 @@ or generated textures.
 
 # Output format
 
-Your entire response will be saved verbatim into a `.py` file and executed by Blender 5.1. Any non-Python content anywhere in the response will break that file. Treat this as a strict machine-to-machine contract, not as a chat reply.
+Your response is limited to {max_response_length} tokens. Generation stops at this limit, and a script cut off before its end fails to run, so write a script that fits well within it.
 
-Your response must consist of nothing but Python source code.
+Write the reconstruction as a Blender 5.1 Python script and put it in exactly one Markdown code block that opens with ```python and closes with ```. Only the content of this block is executed by Blender 5.1; text outside it is ignored.
 
-- Do not emit Markdown code fences.
-- Do not prepend or append prose.
-- Do not include HTML or XML tags, bullet points, headings, or formatting outside Python source.
-- Record image observations only as Python comments inside the script.
-- The first character of the response must be the first character of valid Python source.
-- The final character of the response must be part of the Python script.
-
-Before answering, ensure that this command succeeds without modification:
+- Use exactly one ```python code block. With no such block or with several, the whole response is executed as Python and fails.
+- Keep text outside the block short. Record image observations as Python comments inside the script.
+- The script inside the block must be valid Python: saved as out.py, this command must succeed without modification:
 
 python -c \"import ast; ast.parse(open('out.py').read())\"
 

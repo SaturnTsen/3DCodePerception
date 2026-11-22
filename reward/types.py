@@ -40,11 +40,13 @@ class RunRequest(BaseModel):
     """Body of POST /run.
 
     run_id names the training run; the service keeps the files of each request under
-    runs_dir/<run_id>/, so it must be a plain directory name.
+    runs_dir/<run_id>/, so it must be a plain directory name. response is the raw model
+    output, kept for inspection; code is the script extracted from it and executed.
     """
 
     run_id: str = Field(pattern=r'^[A-Za-z0-9_-][A-Za-z0-9._-]*$')
     object_id: str
+    response: str
     code: str
 
 
