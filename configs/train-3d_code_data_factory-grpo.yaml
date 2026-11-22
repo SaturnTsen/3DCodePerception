@@ -79,6 +79,8 @@ reward:
     path: rl/reward.py
     name: compute_score
     reward_kwargs:
+      # Set by rl/train.py at start: <trainer.experiment_name>-<start time>.
+      run_id: ???
       # Reward service on gbc1 (reward), reached through TCP port forwarding.
       service_url: http://127.0.0.1:8720
       request_timeout: 3600

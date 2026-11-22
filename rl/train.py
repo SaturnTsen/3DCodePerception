@@ -1,4 +1,5 @@
 """Load the experiment with Hydra and launch verl's training workflow."""
+from datetime import datetime
 import os
 import subprocess
 import sys
@@ -45,7 +46,11 @@ def main(config: DictConfig) -> None:
 
     if not config.trainer.use_v1:
         raise ValueError('This training entry requires trainer.use_v1=true')
-    
+
+    # The reward service keeps the files of every request of this run under run_id.
+    config.reward.custom_reward_function.reward_kwargs.run_id = (
+        f'{config.trainer.experiment_name}-{datetime.now():%Y%m%d-%H%M%S}')
+
     auto_set_device(config)
     validate_config(
         config=config,

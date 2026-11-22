@@ -4,7 +4,7 @@ rl/ may import this module only; it depends on nothing else in reward/.
 """
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Outcome of running the generated code, not the HTTP status of the request.
 # ok: ran and measured; execution_error: the script raised or exited before the mesh
@@ -37,8 +37,13 @@ class MeasureResult(BaseModel):
 
 
 class RunRequest(BaseModel):
-    """Body of POST /run."""
+    """Body of POST /run.
 
+    run_id names the training run; the service keeps the files of each request under
+    runs_dir/<run_id>/, so it must be a plain directory name.
+    """
+
+    run_id: str = Field(pattern=r'^[A-Za-z0-9_-][A-Za-z0-9._-]*$')
     object_id: str
     code: str
 

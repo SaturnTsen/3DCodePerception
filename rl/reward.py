@@ -57,6 +57,7 @@ async def compute_score(
     ground_truth: str,
     extra_info: dict[str, Any] | None,
     *,
+    run_id: str,
     service_url: str,
     request_timeout: float,
     chamfer_normalization: ChamferNormalization,
@@ -69,10 +70,11 @@ async def compute_score(
     """Score one response against the object named by ground_truth.
 
     ground_truth: object_id; the reward service holds its target features.
+    run_id: names this training run; the service keeps the files of each request under it.
     HTTP errors are raised so that training stops instead of learning from false zeros.
     """
     async with httpx.AsyncClient(timeout=request_timeout) as client:
-        request = RunRequest(object_id=ground_truth, code=extract_code(solution_str))
+        request = RunRequest(run_id=run_id, object_id=ground_truth, code=extract_code(solution_str))
         response = await client.post(f'{service_url}/run', json=request.model_dump())
     response.raise_for_status()
     result = RunResponse.model_validate(response.json())

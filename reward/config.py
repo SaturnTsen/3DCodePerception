@@ -71,6 +71,8 @@ class RewardServiceConfig(StrictModel):
     # Time limit of converting one target GLB to a mesh at start.
     glb_timeout: float = Field(gt=0)
     work_dir: Path = Field(strict=False)
+    # Files of every request: runs_dir/<run_id>/<time>_<object_id>_<random>/.
+    runs_dir: Path = Field(strict=False)
     blender: Path = Field(strict=False)
     blender_threads: int = Field(gt=0)
     max_parallel: int = Field(gt=0)

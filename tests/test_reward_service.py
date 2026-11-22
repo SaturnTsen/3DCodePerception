@@ -67,6 +67,7 @@ class RewardServiceTest(unittest.TestCase):
         # The repository configuration with a tiny CPU render and a fake Bark server.
         cls.config = config.model_copy(update={
             'source_root': cls.root / 'source', 'features_dir': cls.root / 'features', 'work_dir': cls.root / 'work',
+            'runs_dir': cls.root / 'runs',
             'device': DEVICE, 'script_timeout': 10.0,
             'render': config.render.model_copy(update={'device': 'CPU', 'samples': 1, 'resolution': 64}),
             'alert': config.alert.model_copy(update={'url': f'http://127.0.0.1:{cls.bark.server_port}/KEY'}),
@@ -82,7 +83,7 @@ class RewardServiceTest(unittest.TestCase):
         return TestClient(create_app(config, self.dinov3, self.uni3d))
 
     def run_code(self, client: TestClient, code: str, object_id: str = 'Cube'):
-        return client.post('/run', json={'object_id': object_id, 'code': code})
+        return client.post('/run', json={'run_id': 'test', 'object_id': object_id, 'code': code})
 
     def test_target_feats_are_written_once(self):
         path = self.config.features_dir / 'Cube.npz'
@@ -99,6 +100,10 @@ class RewardServiceTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         result = response.json()
         self.assertEqual(result['run_status'], 'ok')
+        [saved] = (self.config.runs_dir / 'test').iterdir()
+        self.assertIn('_Cube_', saved.name)
+        for name in ('response.py', 'mesh.npz', 'blender.log', 'result.json', 'renders/view_0.png'):
+            self.assertTrue((saved / name).is_file(), name)
         metrics = result['metrics']
         self.assertLess(metrics['chamfer']['rms_radius'], 0.05)
         self.assertGreater(metrics['uni3d']['cos_3d_3d'], 0.95)
@@ -108,6 +113,7 @@ class RewardServiceTest(unittest.TestCase):
         self.assertEqual(self.run_code(client, 'raise RuntimeError\n').json()['run_status'], 'execution_error')
         self.assertEqual(self.run_code(client, CUBE, 'Missing').status_code, 404)
         self.assertEqual(self.run_code(client, CUBE, '../Cube').status_code, 404)
+        self.assertEqual(client.post('/run', json={'run_id': '..', 'object_id': 'Cube', 'code': CUBE}).status_code, 422)
 
     def test_render_failure_returns_500_and_alerts_once(self):
         # A GPU render with no visible CUDA device fails after the mesh is exported.

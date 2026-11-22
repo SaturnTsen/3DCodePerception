@@ -12,6 +12,9 @@ views:
 features_dir: data/3DCodeDataFactory_features
 glb_timeout: 60
 work_dir: temp/reward
+# Each request keeps its code, mesh, renders, Blender log, and result.json in
+# runs_dir/<run_id>/<time>_<object_id>_<random>/.
+runs_dir: outputs/reward_runs
 blender: /home/ubuntu/.local/bin/blender
 blender_threads: 4
 max_parallel: 6
