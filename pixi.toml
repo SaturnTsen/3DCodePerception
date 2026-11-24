@@ -11,6 +11,7 @@ default = { features = ["dev"] }
 [tasks]
 prepare-rl = "python -m rl.prepare"
 train-rl = "python -m rl.train"
+serve = "python -m rl.serve-checkpoint"
 reward-service = "python -m reward.app"
 typecheck = "pyright"
 
